@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Task Manager</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
+</head>
+<body>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <a class="brand" href="/">
+                <span class="brand-mark">✓</span>
+                <span>TaskFlow</span>
+            </a>
+
+            <p class="sidebar-label">WORKSPACE</p>
+            <a class="nav-link active" href="/">
+                <span class="nav-icon">▦</span> Dashboard
+            </a>
+            <a class="nav-link" href="#add-task">
+                <span class="nav-icon">＋</span> Add a task
+            </a>
+            <a class="nav-link" href="#task-list">
+                <span class="nav-icon">☷</span> My tasks
+            </a>
+
+            <div class="sidebar-bottom">
+                <div class="sidebar-note">
+                    <span class="note-icon">✦</span>
+                    <strong>Small steps add up.</strong>
+                    <p>Keep moving forward, one task at a time.</p>
+                </div>
+                <p class="sidebar-foot">YOUR PERSONAL WORKSPACE</p>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="topbar">
+                <div>
+                    <p class="eyebrow">YOUR WORKSPACE</p>
+                    <h1>Good to see you!</h1>
+                    <p class="welcome-text">Plan your day, stay focused, and get things done.</p>
+                </div>
+                <button type="button" class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+                    <span id="themeIcon">☾</span>
+                    <span id="themeLabel">Dark mode</span>
+                </button>
+            </header>
+
+            
+<section class="stats-grid" aria-label="Task statistics">
+
+    <article class="stat-card stat-total">
+        <div class="stat-topline">
+            <span>Total tasks</span>
+            <span class="stat-icon">▤</span>
+        </div>
+        <p class="stat-number" id="totalCount">{{ total_tasks }}</p>
+        <p class="stat-caption">Tasks in your workspace</p>
+    </article>
+
+    <article class="stat-card stat-completed">
+        <div class="stat-topline">
+            <span>Completed</span>
+            <span class="stat-icon">✓</span>
+        </div>
+        <p class="stat-number" id="completedCount">{{ completed_tasks }}</p>
+        <p class="stat-caption">You made progress!</p>
+    </article>
+
+    <article class="stat-card stat-pending">
+        <div class="stat-topline">
+            <span>Pending</span>
+            <span class="stat-icon">◷</span>
+        </div>
+        <p class="stat-number" id="pendingCount">{{ pending_tasks }}</p>
+        <p class="stat-caption">Still on your list</p>
+    </article>
+
+</section>
+
+<section class="progress-section">
+    <div class="progress-header">
+        <h3>Overall Progress</h3>
+        <span id="progressPercentage">0%</span>
+    </div>
+
+    <div class="progress-track">
+        <div class="progress-fill" id="progressFill"></div>
+    </div>
+
+    <p id="progressText">0 of 0 tasks completed</p>
+</section>
+
+
+            <section class="content-section" id="add-task">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow">GET STARTED</p>
+                        <h2>Create a task</h2>
+                        <p class="section-subtitle">Add the details so you know exactly what needs doing.</p>
+                    </div>
+                </div>
+
+                <form action="/add-task" method="post" enctype="multipart/form-data" class="task-form">
+                    <div class="form-field full-width">
+                        <label for="title">Task name <span class="required">*</span></label>
+                        <input type="text" id="title" name="title" placeholder="e.g. Finish project presentation" required>
+                    </div>
+
+                    <div class="form-field full-width">
+                        <label for="description">Description</label>
+                        <textarea id="description" name="description" rows="3" placeholder="Add a few details about this task..."></textarea>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="priority">Priority</label>
+                        <select name="priority" id="priority">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="due_date">Due date</label>
+                        <input type="date" name="due_date" id="due_date">
+                    </div>
+
+                    <div class="form-field full-width">
+                        <label for="attachment">Attachment <span class="optional">(optional)</span></label>
+                        <input type="file" name="attachment" id="attachment">
+                    </div>
+
+                    <div class="form-actions full-width">
+                        <button type="submit" class="primary-button">＋ Add task</button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="content-section task-section" id="task-list">
+                <div class="section-heading task-heading">
+                    <div>
+                        <p class="eyebrow">YOUR WORK</p>
+                        <h2>My tasks</h2>
+                        <p class="section-subtitle">Search, filter, and manage everything on your list.</p>
+                    </div>
+                    <span class="task-count">{{ tasks|length }} shown</span>
+                </div>
+
+                <form action="/" method="get" class="filter-form">
+                    <div class="search-field">
+                        <span class="search-icon">⌕</span>
+                        <input type="text" name="search" placeholder="Search tasks..." value="{{ search }}">
+                    </div>
+                    <select name="priority" aria-label="Filter by priority">
+                        <option value="">All priorities</option>
+                        <option value="low" {% if priority == "low" %}selected{% endif %}>Low priority</option>
+                        <option value="medium" {% if priority == "medium" %}selected{% endif %}>Medium priority</option>
+                        <option value="high" {% if priority == "high" %}selected{% endif %}>High priority</option>
+                    </select>
+                    <select name="status" aria-label="Filter by status">
+                        <option value="">All tasks</option>
+                        <option value="pending" {% if status == "pending" %}selected{% endif %}>Pending</option>
+                        <option value="completed" {% if status == "completed" %}selected{% endif %}>Completed</option>
+                    </select>
+                    <button type="submit" class="filter-button">Apply</button>
+                    <a href="/" class="clear-link">Clear</a>
+                </form>
+
+                {% if tasks %}
+                    <div class="task-list">
+                        {% for task in tasks %}
+                            <article class="task-card {% if task.completed %}is-completed{% endif %}" id="task-{{ task.id }}">
+                                <div class="task-main">
+                                    <span class="task-status-dot"></span>
+                                    <div class="task-copy">
+                                        <h3 class="{% if task.completed %}completed{% endif %}">{{ task.title }}</h3>
+                                        {% if task.due_date %}
+    {% if not task.completed and task.due_date < today %}
+        <span class="due-status overdue">Overdue</span>
+    {% elif not task.completed and task.due_date == today %}
+        <span class="due-status due-today">Due Today</span>
+    {% elif not task.completed %}
+        <span class="due-status upcoming">Upcoming</span>
+    {% endif %}
+{% endif %}
+                                        {% if not tasks %}
+                                        <div class="empty-state">
+                                            <h3>No tasks found</h3>
+                                            <p>Try a different search or change your filters.</p>
+                                        </div>
+                                        {% endif %}
+
+
+                                        {% if task.description %}
+                                            <p class="task-description">{{ task.description }}</p>
+                                        {% endif %}
+                                        <div class="task-meta">
+                                            <span class="priority-badge priority-{{ task.priority }}">{{ task.priority|title }} priority</span>
+                                            {% if task.due_date %}
+                                                <span class="due-date">◷ {{ task.due_date.strftime('%d-%m-%Y') }}</span>
+                                            {% endif %}
+                                            {% if task.attachment %}
+                                                <a class="attachment-link" href="{{ task.attachment }}" target="_blank" rel="noopener">↗ View attachment</a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="task-actions">
+                                    {% if not task.completed %}
+                                        <form action="/complete-task/{{ task.id }}" method="post">
+                                            <button type="submit" class="action-button complete-button">✓ Complete</button>
+                                        </form>
+                                    {% else %}
+                                        <span class="completed-label">✓ Completed</span>
+                                    {% endif %}
+                                    <a href="/edit-task/{{ task.id }}" class="action-button edit-button">Edit</a>
+                                    <form action="/delete-task/{{ task.id }}" method="post">
+                                        <button type="submit" class="action-button delete-button">Delete</button>
+                                    </form>
+                                </div>
+                            </article>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <div class="empty-icon">☷</div>
+                        {% if search or priority or status %}
+                            <h3>No matching tasks</h3>
+                            <p>Try changing your search or filters.</p>
+                            <a href="/" class="secondary-button">Clear filters</a>
+                        {% else %}
+                            <h3>Your task list is empty</h3>
+                            <p>Add your first task above and it will appear here.</p>
+                            <a href="#add-task" class="secondary-button">＋ Create your first task</a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </section>
+
+            <footer class="page-footer">Made for better focus <span>✦</span></footer>
+        </main>
+    </div>
+
+    <script>
+        history.scrollRestoration = "manual";
+        // Restore the user's preferred color theme.
+        const themeToggle = document.getElementById("themeToggle");
+        const themeIcon = document.getElementById("themeIcon");
+        const themeLabel = document.getElementById("themeLabel");
+
+        function applyTheme(theme) {
+            document.documentElement.setAttribute("data-theme", theme);
+            themeIcon.textContent = theme === "dark" ? "☀" : "☾";
+            themeLabel.textContent = theme === "dark" ? "Light mode" : "Dark mode";
+        }
+
+        const savedTheme = localStorage.getItem("taskManagerTheme") || "light";
+        applyTheme(savedTheme);
+
+        themeToggle.addEventListener("click", function () {
+            const currentTheme = document.documentElement.getAttribute("data-theme");
+            const newTheme = currentTheme === "dark" ? "light" : "dark";
+            localStorage.setItem("taskManagerTheme", newTheme);
+            applyTheme(newTheme);
+        });
+
+
+// Remember scroll position when completing or deleting a task
+document.querySelectorAll(
+    'form[action^="/complete-task/"], form[action^="/delete-task/"]'
+).forEach(function (form) {
+    form.addEventListener("submit", function () {
+        sessionStorage.setItem(
+            "taskScrollPosition",
+            window.scrollY
+        );
+    });
+});
+
+// Restore scroll position after the page reloads
+window.addEventListener("load", function () {
+    const savedPosition = sessionStorage.getItem("taskScrollPosition");
+
+    if (savedPosition !== null) {
+        window.scrollTo(0, Number(savedPosition));
+        sessionStorage.removeItem("taskScrollPosition");
+    }
+});
+
+
+
+// Remember scroll position when applying search and filters
+const filterForm = document.querySelector(".filter-form");
+
+if (filterForm) {
+    filterForm.addEventListener("submit", function () {
+        sessionStorage.setItem("filterScrollPosition", window.scrollY);
+    });
+}
+
+// Restore scroll position after filtering
+window.addEventListener("load", function () {
+    const savedPosition = sessionStorage.getItem("filterScrollPosition");
+
+    if (savedPosition !== null) {
+        window.scrollTo(0, Number(savedPosition));
+        sessionStorage.removeItem("filterScrollPosition");
+    }
+});
+
+
+
+// Overall task progress
+const total = document.getElementById("totalCount");
+const completed = document.getElementById("completedCount");
+const pending = document.getElementById("pendingCount");
+
+function updateProgress() {
+    const totalTasks = Number(total.textContent);
+    const completedTasks = Number(completed.textContent);
+
+    const percentage = totalTasks === 0
+        ? 0
+        : Math.round((completedTasks / totalTasks) * 100);
+
+    document.getElementById("progressPercentage").textContent =
+        percentage + "%";
+
+    document.getElementById("progressFill").style.width =
+        percentage + "%";
+
+    ddocument.getElementById("progressText").textContent =
+    percentage === 100 && totalTasks > 0
+        ? "🎉 All tasks completed! Great job!"
+        : completedTasks + " of " + totalTasks + " tasks completed";
+}
+
+updateProgress();
+
+// Handle Complete and Delete without reloading the page
+document.querySelectorAll(
+    'form[action^="/complete-task/"], form[action^="/delete-task/"]'
+).forEach(function (form) {
+
+    form.addEventListener("submit", async function (event) {
+        event.preventDefault();
+
+        const isDelete = form.action.includes("/delete-task/");
+
+        if (isDelete && !confirm("Are you sure you want to delete this task?")) {
+            return;
+        }
+
+        const card = form.closest(".task-card");
+
+        const response = await fetch(form.action, {
+            method: "POST"
+        });
+
+        if (!response.ok) {
+            alert("Something went wrong. Please try again.");
+            return;
+        }
+
+        if (isDelete) {
+            const wasCompleted = card.classList.contains("is-completed");
+
+            card.remove();
+
+            total.textContent = Number(total.textContent) - 1;
+
+            if (wasCompleted) {
+                completed.textContent = Number(completed.textContent) - 1;
+            } else {
+                pending.textContent = Number(pending.textContent) - 1;
+            }
+
+        } else {
+            card.classList.add("is-completed");
+
+            const title = card.querySelector(".task-copy h3");
+            title.classList.add("completed");
+
+            form.outerHTML = '<span class="completed-label">✓ Completed</span>';
+
+            completed.textContent = Number(completed.textContent) + 1;
+            pending.textContent = Number(pending.textContent) - 1;
+        }
+
+        updateProgress();
+    });
+});
+
+
+
+    </script>
+</body>
+</html>
