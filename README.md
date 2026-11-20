@@ -65,6 +65,7 @@ task_manager/
 5. Open your browser and visit:
 
    http://127.0.0.1:8000/
+   https://task-manager-6dof.onrender.com/
 
 ## Project Goal
 
